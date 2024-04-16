@@ -1,0 +1,11 @@
+[package]
+name = "main"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tfhe = {path="../tfhe", features = ["boolean", "shortint", "integer", "x86_64-unix", "gpu"]}
+bio_aux = {path = "../bio_aux"}
+config = {path ="../config"}
