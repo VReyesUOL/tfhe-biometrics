@@ -73,12 +73,12 @@ pub fn quantize_feature_vector(raw_feature_vector: Vec<f64>, qbins: &Vec<f64>) -
     quantized_feature_vector
 }
 
-pub fn probe_and_template_generation_radix_prepare(entry_num:usize, template_num: usize) -> (Vec<u8>, Vec<u8>) {
-    let qbin_filename = format!("{}{}.csv", DATA_SET_NAME, QBIN_SUFFIX);
-    let qbins_path = [DATA_PATH, LOOKUP_TABLES_FOLDER, DATA_SET_NAME, qbin_filename.as_str()].join(PATH_SEPARATOR);
+pub fn probe_and_template_generation_radix_prepare(entry_num:usize, template_num: usize, config: &Config) -> (Vec<u8>, Vec<u8>) {
+    let qbin_filename = format!("{}{}.csv", config.data_set_name, QBIN_SUFFIX);
+    let qbins_path = [DATA_PATH, LOOKUP_TABLES_FOLDER, config.data_set_name, qbin_filename.as_str()].join(PATH_SEPARATOR);
     let bins = read_qbins(qbins_path.as_str());
 
-    let csv_filename = format!("{}.csv", DATA_SET_NAME);
+    let csv_filename = format!("{}.csv", config.data_set_name);
     let csv_path = [DATA_PATH, csv_filename.as_str()].join(PATH_SEPARATOR);
 
     // Load raw samples of template from file

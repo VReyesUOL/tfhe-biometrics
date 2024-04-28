@@ -9,3 +9,5 @@ edition = "2021"
 tfhe = {path="../tfhe", features = ["boolean", "shortint", "integer", "x86_64-unix", "gpu"]}
 bio_aux = {path = "../bio_aux"}
 config = {path ="../config"}
+rayon = "1.10.0"
+itertools = "0.11.0"

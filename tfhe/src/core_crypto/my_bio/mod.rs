@@ -1,8 +1,8 @@
-pub mod tfhe_functions_classic;
-pub mod all_in_one_classic;
-pub mod all_in_one_multibit;
-pub mod tfhe_functions_multibit;
+
+pub mod gpu;
 pub mod common;
+pub mod cpu_gpu;
+pub mod cpu;
 
 pub fn this_name_is_very_expressive(){
     /*

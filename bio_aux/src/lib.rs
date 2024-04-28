@@ -2,12 +2,11 @@ pub mod io;
 
 use config::*;
 
-
-pub fn generate_functions(template: &Vec<u8>) -> (Vec<Vec<Box< dyn Fn(u64) -> u64>>>, u64, usize) {
+pub fn generate_functions_stop_early(template: &Vec<u8>, config: &Config) -> (Vec<Vec<Box< dyn Fn(u64) -> u64>>>, usize) {
     // read precomputed HELR tables from files
-    let tables_path = [DATA_PATH, LOOKUP_TABLES_FOLDER, DATA_SET_NAME, TABLE_PREFIX].join(PATH_SEPARATOR);
+    let tables_path = [DATA_PATH, LOOKUP_TABLES_FOLDER, config.data_set_name, TABLE_PREFIX].join(PATH_SEPARATOR);
     let helr_tables =
-        io::read_helr_tables(tables_path.as_str(), NUM_TABLES).unwrap();
+        io::read_helr_tables(tables_path.as_str(), config.num_tables).unwrap();
 
     // offset all HELR tables to only have nonnegative entries and save the cumulated offset for all tables
     let (offset_helr_tables, offset) = offset_helr_table(helr_tables);
@@ -15,11 +14,14 @@ pub fn generate_functions(template: &Vec<u8>) -> (Vec<Vec<Box< dyn Fn(u64) -> u6
     // generate a vector of LUT/value vectors for each table
     let mut lut_vecs = Vec::new();
     for (idx, table) in offset_helr_tables.iter().enumerate() {
-        let decomposed_helr = decompose_helr_table(&table, BLOCK_LENGTH as usize, NUM_BLOCK);
+        let decomposed_helr = decompose_helr_table(&table, config.block_length, config.num_blocks);
         let dim = decomposed_helr[0].len() as u64;
         let template_x = template[idx];
         let mut lut_vec = Vec::new();
-        for block_num in 0..NUM_BLOCK {
+        for block_num in 0..config.num_blocks {
+            if table[0][0] / 2u32.pow((config.block_length * block_num) as u32) <= 0 {
+                break;
+            }
             let copied_table = decomposed_helr.clone();
             let boxed: Box<dyn Fn(u64) -> u64> = Box::new(move |probe_y: u64| -> u64 {
                 if probe_y < dim {
@@ -33,16 +35,50 @@ pub fn generate_functions(template: &Vec<u8>) -> (Vec<Vec<Box< dyn Fn(u64) -> u6
         lut_vecs.push(lut_vec);
     }
 
-    let threshold = THRESHOLD + offset as u64;
-    (lut_vecs, threshold, NUM_BLOCK_SUM)
+    let threshold = config.threshold + offset as i64;
+    (lut_vecs, threshold as usize)
 }
 
-pub fn offset_helr_table(helr_tables:Vec<Vec<Vec<i32>>>) -> (Vec<Vec<Vec<u32>>>, u32 ) {
-    let mut offset:u32 = 0;
+pub fn generate_functions_const_length(template: &Vec<u8>, config: &Config) -> (Vec<Vec<Box< dyn Fn(u64) -> u64>>>, usize) {
+    // read precomputed HELR tables from files
+    let tables_path = [DATA_PATH, LOOKUP_TABLES_FOLDER, config.data_set_name, TABLE_PREFIX].join(PATH_SEPARATOR);
+    let helr_tables =
+        io::read_helr_tables(tables_path.as_str(), config.num_tables).unwrap();
+
+    // offset all HELR tables to only have nonnegative entries and save the cumulated offset for all tables
+    let (offset_helr_tables, offset) = offset_helr_table(helr_tables);
+
+    // generate a vector of LUT/value vectors for each table
+    let mut lut_vecs = Vec::new();
+    for (idx, table) in offset_helr_tables.iter().enumerate() {
+        let decomposed_helr = decompose_helr_table(&table, config.block_length, config.num_blocks);
+        let dim = decomposed_helr[0].len() as u64;
+        let template_x = template[idx];
+        let mut lut_vec = Vec::new();
+        for block_num in 0..config.num_blocks {
+            let copied_table = decomposed_helr.clone();
+            let boxed: Box<dyn Fn(u64) -> u64> = Box::new(move |probe_y: u64| -> u64 {
+                if probe_y < dim {
+                    copied_table[template_x as usize][probe_y as usize][block_num]
+                } else {
+                    0
+                }
+            });
+            lut_vec.push(boxed);
+        }
+        lut_vecs.push(lut_vec);
+    }
+
+    let threshold = config.threshold + offset as i64;
+    (lut_vecs, threshold as usize)
+}
+
+pub fn offset_helr_table(helr_tables:Vec<Vec<Vec<i32>>>) -> (Vec<Vec<Vec<u32>>>, i32 ) {
+    let mut offset:i32 = 0;
     let mut tables = Vec::with_capacity(helr_tables.len());
     for helr in helr_tables{
         let local_offset = helr[0][helr[0].len() - 1].abs();
-        offset += local_offset as u32;
+        offset += local_offset;
         let mut new_helr = Vec::with_capacity(helr.len());
         for row in helr {
             let mut new_row = Vec::with_capacity(row.len());
@@ -81,15 +117,15 @@ pub fn decompose_helr_table(helr: &Vec<Vec<u32>>, block_length: usize, block_cou
 }
 
 
-pub fn encrypt_feature_vec_radix<F, T: Clone>(feature_vec: Vec<u8>, encrypt: F) -> Vec<Vec<T>>
+pub fn encrypt_feature_vec_radix<F, T: Clone>(feature_vec: Vec<u8>, encrypt: F, config: Config) -> Vec<Vec<T>>
 where
     F: Fn(u64) -> T,
 {
     let mut result = Vec::new();
     for feature in feature_vec {
-        let mut inner = Vec::with_capacity(NUM_BLOCK);
+        let mut inner = Vec::with_capacity(config.num_blocks);
         let block = encrypt(feature as u64);
-        for _ in 1..NUM_BLOCK {
+        for _ in 1..config.num_blocks {
             inner.push(block.clone());
         }
         inner.push(block);

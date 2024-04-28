@@ -1,13 +1,13 @@
-use crate::boolean::parameters::PolynomialSize;
 use crate::core_crypto::algorithms::{allocate_and_generate_new_binary_glwe_secret_key, allocate_and_generate_new_binary_lwe_secret_key, allocate_and_generate_new_lwe_keyswitch_key, par_allocate_and_generate_new_lwe_bootstrap_key};
-use crate::core_crypto::entities::{GlweCiphertext, GlweCiphertextOwned, LweBootstrapKeyOwned};
+use crate::core_crypto::entities::{LweBootstrapKeyOwned};
 use crate::core_crypto::gpu::{cuda_keyswitch_lwe_ciphertext, cuda_programmable_bootstrap_lwe_ciphertext, CudaStream};
 use crate::core_crypto::gpu::glwe_ciphertext_list::CudaGlweCiphertextList;
 use crate::core_crypto::gpu::lwe_bootstrap_key::CudaLweBootstrapKey;
 use crate::core_crypto::gpu::lwe_ciphertext_list::CudaLweCiphertextList;
 use crate::core_crypto::gpu::lwe_keyswitch_key::CudaLweKeyswitchKey;
 use crate::core_crypto::gpu::vec::CudaVec;
-use crate::core_crypto::prelude::{GlweSecretKeyOwned, GlweSize, LweCiphertextCount, LweSecretKeyOwned };
+use crate::core_crypto::my_bio::common::Keys;
+use crate::core_crypto::prelude::{GlweSecretKeyOwned, LweCiphertextCount, LweSecretKeyOwned };
 use crate::integer::block_decomposition::BlockDecomposer;
 use crate::integer::gpu::ciphertext::{CudaRadixCiphertext, CudaUnsignedRadixCiphertext};
 use crate::integer::gpu::ciphertext::boolean_value::CudaBooleanBlock;
@@ -15,20 +15,11 @@ use crate::integer::gpu::ciphertext::info::{CudaBlockInfo, CudaRadixCiphertextIn
 use crate::integer::gpu::{ComparisonType, CudaServerKey};
 use crate::integer::gpu::server_key::CudaBootstrappingKey;
 use crate::integer::gpu::server_key::CudaBootstrappingKey::Classic;
-use crate::shortint::{CarryModulus, CiphertextModulus, MessageModulus, ShortintParameterSet};
+use crate::shortint::{CiphertextModulus, ShortintParameterSet};
 use crate::shortint::ciphertext::{Degree, MaxDegree};
 use crate::shortint::engine::ShortintEngine;
 use crate::shortint::parameters::NoiseLevel;
 
-pub struct Keys {
-    pub lwe_secret_key: LweSecretKeyOwned<u64>,
-    pub glwe_secret_key: GlweSecretKeyOwned<u64>,
-    pub server_key: CudaServerKey,
-    pub delta: u64,
-    pub total_modulus: usize,
-    pub stream: CudaStream,
-    pub parameters: ShortintParameterSet,
-}
 
 pub fn make_keys(params: ShortintParameterSet, stream: CudaStream, engine: &mut ShortintEngine) -> Keys {
 
@@ -178,62 +169,6 @@ pub fn do_keyswitch(
         &indices[1],
         &keys.stream,
     );
-}
-
-pub fn generate_accumulator<F>(
-    glwe_size: GlweSize,
-    polynomial_size: PolynomialSize,
-    message_modulus: MessageModulus,
-    ciphertext_modulus: CiphertextModulus,
-    carry_modulus: CarryModulus,
-    f: F,
-) -> GlweCiphertextOwned<u64> where
-    F: Fn(u64) -> u64,
-{
-    let mut accumulator = GlweCiphertext::new(
-        0,
-        glwe_size,
-        polynomial_size,
-        ciphertext_modulus,
-    );
-
-    let mut accumulator_view = accumulator.as_mut_view();
-
-    accumulator_view.get_mut_mask().as_mut().fill(0);
-
-    // Modulus of the msg contained in the msg bits and operations buffer
-    let modulus_sup = message_modulus.0 * carry_modulus.0;
-
-    // N/(p/2) = size of each block
-    let box_size = polynomial_size.0 / modulus_sup;
-
-    // Value of the shift we multiply our messages by
-    let delta = (1_u64 << 63) / (message_modulus.0 * carry_modulus.0) as u64;
-
-    let mut body = accumulator_view.get_mut_body();
-    let accumulator_u64 = body.as_mut();
-
-    // Tracking the max value of the function to define the degree later
-    let mut max_value = 0;
-
-    for i in 0..modulus_sup {
-        let index = i * box_size;
-        let f_eval = f(i as u64);
-        max_value = max_value.max(f_eval);
-        accumulator_u64[index..index + box_size].fill(f_eval * delta);
-    }
-
-    let half_box_size = box_size / 2;
-
-    // Negate the first half_box_size coefficients
-    for a_i in accumulator_u64[0..half_box_size].iter_mut() {
-        *a_i = (*a_i).wrapping_neg();
-    }
-
-    // Rotate the accumulator
-    accumulator_u64.rotate_left(half_box_size);
-
-    accumulator
 }
 
 pub fn do_pbs(
