@@ -26,4 +26,4 @@ pub mod keycache;
 // Experimental section
 #[cfg(feature = "experimental")]
 pub mod experimental;
-pub mod my_bio;
+pub mod biometrics;

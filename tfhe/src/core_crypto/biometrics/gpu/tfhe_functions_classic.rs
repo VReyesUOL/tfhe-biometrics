@@ -6,7 +6,7 @@ use crate::core_crypto::gpu::lwe_bootstrap_key::CudaLweBootstrapKey;
 use crate::core_crypto::gpu::lwe_ciphertext_list::CudaLweCiphertextList;
 use crate::core_crypto::gpu::lwe_keyswitch_key::CudaLweKeyswitchKey;
 use crate::core_crypto::gpu::vec::CudaVec;
-use crate::core_crypto::my_bio::common::Keys;
+use crate::core_crypto::biometrics::common::Keys;
 use crate::core_crypto::prelude::{GlweSecretKeyOwned, LweCiphertextCount, LweSecretKeyOwned };
 use crate::integer::block_decomposition::BlockDecomposer;
 use crate::integer::gpu::ciphertext::{CudaRadixCiphertext, CudaUnsignedRadixCiphertext};

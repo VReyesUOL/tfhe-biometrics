@@ -8,7 +8,7 @@ use crate::core_crypto::gpu::lwe_ciphertext_list::CudaLweCiphertextList;
 use crate::core_crypto::gpu::lwe_keyswitch_key::CudaLweKeyswitchKey;
 use crate::core_crypto::gpu::lwe_multi_bit_bootstrap_key::CudaLweMultiBitBootstrapKey;
 use crate::core_crypto::gpu::vec::CudaVec;
-use crate::core_crypto::my_bio::common;
+use crate::core_crypto::biometrics::common;
 use crate::core_crypto::prelude::{ContiguousEntityContainer, ContiguousEntityContainerMut, FourierLweMultiBitBootstrapKeyOwned, GlweCiphertextListOwned, LweCiphertextCount, LweCiphertextListOwned, LweCiphertextOwned, LweKeyswitchKeyOwned, multi_bit_programmable_bootstrap_lwe_ciphertext, ThreadCount};
 use crate::integer::block_decomposition::BlockDecomposer;
 use crate::integer::gpu::ciphertext::boolean_value::CudaBooleanBlock;

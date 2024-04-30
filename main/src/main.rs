@@ -1,12 +1,12 @@
 use std::time::Duration;
-use tfhe::core_crypto::my_bio::common;
+use tfhe::core_crypto::biometrics::common;
 use itertools::Itertools;
 use bio_aux;
 use config::Config;
-use tfhe::core_crypto::my_bio::cpu::{all_in_one_classic, all_in_one_multibit};
-use tfhe::core_crypto::my_bio::gpu::all_in_one_classic as classic;
-use tfhe::core_crypto::my_bio::gpu::all_in_one_multibit as multibit;
-use tfhe::core_crypto::my_bio::cpu_gpu::{all_in_one_multibit as multibit_cpu_gpu, all_in_one_original};
+use tfhe::core_crypto::biometrics::cpu::{all_in_one_classic, all_in_one_multibit};
+use tfhe::core_crypto::biometrics::gpu::all_in_one_classic as classic;
+use tfhe::core_crypto::biometrics::gpu::all_in_one_multibit as multibit;
+use tfhe::core_crypto::biometrics::cpu_gpu::{all_in_one_multibit as multibit_cpu_gpu, all_in_one_original};
 use tfhe::integer;
 use tfhe::integer::RadixClientKey;
 use tfhe::shortint::engine::ShortintEngine;
@@ -81,7 +81,7 @@ pub fn test_classic_cpu_original(test_idx: usize, template_idx: usize, probe_idx
     let mut engine = ShortintEngine::new();
 
     //Setup
-    let (client_key,server_key) = tfhe::core_crypto::my_bio::cpu::tfhe_functions_classic::make_keys_classic(parameter_set, &mut engine);
+    let (client_key,server_key) = tfhe::core_crypto::biometrics::cpu::tfhe_functions_classic::make_keys_classic(parameter_set, &mut engine);
 
     //Fetch probe and template
     let (probe, template) = bio_aux::io::probe_and_template_generation_radix_prepare(probe_idx, template_idx, &config);
@@ -167,7 +167,7 @@ pub fn test_multibit_cpu_original(test_idx: usize, template_idx: usize, probe_id
     let mut engine = ShortintEngine::new();
 
     //Setup
-    let (client_key,server_key) = tfhe::core_crypto::my_bio::cpu::tfhe_functions_multibit::make_keys_multibit(parameter_set, thread_count_bs, &mut engine);
+    let (client_key,server_key) = tfhe::core_crypto::biometrics::cpu::tfhe_functions_multibit::make_keys_multibit(parameter_set, thread_count_bs, &mut engine);
 
     //Fetch probe and template
     let (probe, template) = bio_aux::io::probe_and_template_generation_radix_prepare(probe_idx, template_idx, &config);
@@ -229,7 +229,7 @@ pub fn test_original(test_idx: usize, template_idx: usize, probe_idx: usize, con
     let (
         (params, client_key),
         (server_key, cuda_server_key)
-    ) = tfhe::core_crypto::my_bio::cpu_gpu::tfhe_functions_original::make_keys_original(parameter_set, &stream, &mut engine);
+    ) = tfhe::core_crypto::biometrics::cpu_gpu::tfhe_functions_original::make_keys_original(parameter_set, &stream, &mut engine);
 
     //Fetch probe and template
     let (probe, template) = bio_aux::io::probe_and_template_generation_radix_prepare(probe_idx, template_idx, &config);
@@ -299,7 +299,7 @@ pub fn test_multibit_gpu_cpu(test_idx: usize, template_idx: usize, probe_idx: us
         (ksk, bsk),
         (cuda_ksk, cuda_bsk),
         (delta, total_modulus)
-    ) = tfhe::core_crypto::my_bio::cpu_gpu::tfhe_functions_multibit::make_keys_multibit(cuda_param_set, &stream, &mut engine);
+    ) = tfhe::core_crypto::biometrics::cpu_gpu::tfhe_functions_multibit::make_keys_multibit(cuda_param_set, &stream, &mut engine);
 
     //Fetch probe and template
     let (probe, template) = bio_aux::io::probe_and_template_generation_radix_prepare(probe_idx, template_idx, &config);
@@ -371,7 +371,7 @@ pub fn test_multibit_gpu(test_idx: usize, template_idx: usize, probe_idx: usize,
 
     //Setup
     let (stream, mut engine) = common::make_context_gpu();
-    let ((params, glwe_secret_key), (ksk, bsk), (delta, total_modulus)) = tfhe::core_crypto::my_bio::gpu::tfhe_functions_multibit::make_keys_multibit(parameter_set, &stream, &mut engine);
+    let ((params, glwe_secret_key), (ksk, bsk), (delta, total_modulus)) = tfhe::core_crypto::biometrics::gpu::tfhe_functions_multibit::make_keys_multibit(parameter_set, &stream, &mut engine);
 
     //Fetch probe and template
     let (probe, template) = bio_aux::io::probe_and_template_generation_radix_prepare(probe_idx, template_idx, &config);
@@ -435,7 +435,7 @@ fn test_classic_gpu(test_idx: usize, template_idx: usize, probe_idx: usize, conf
 
     //Setup
     let (stream,mut engine) = common::make_context_gpu();
-    let (_lwe_secret_key, glwe_secret_key, ksk, bsk, delta, total_modulus, params,) = tfhe::core_crypto::my_bio::gpu::tfhe_functions_classic::make_keys_no_server_key(parameter_set.into(), &stream, &mut engine);
+    let (_lwe_secret_key, glwe_secret_key, ksk, bsk, delta, total_modulus, params,) = tfhe::core_crypto::biometrics::gpu::tfhe_functions_classic::make_keys_no_server_key(parameter_set.into(), &stream, &mut engine);
 
     //Fetch probe and template
     let (probe, template) = bio_aux::io::probe_and_template_generation_radix_prepare(probe_idx, template_idx, &config);
