@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 720
 
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
 
       - name: Install latest stable
         uses: dtolnay/rust-toolchain@dc6353516c68da0f06325f42ad880f76a5e77ec9
